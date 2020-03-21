@@ -26,10 +26,8 @@ provider:
   runtime: go1.x
   stage: beta
   region: eu-central-1
-
-# you can overwrite defaults here
-#  stage: dev
-#  region: us-east-1
+  # environment:
+  #   IAM_TABLE_NAME: ${self:custom.iamTableName}
 
 # you can add statements to the Lambda function's IAM Role here
 #  iamRoleStatements:
@@ -58,21 +56,9 @@ package:
     - ./bin/**
 
 functions:
-  hello:
-    handler: bin/hello
-    events:
-      - http:
-          path: hello
-          method: get
-  world:
-    handler: bin/world
-    events:
-      - http:
-          path: world
-          method: get
-#    The following are a few example events you can configure
-#    NOTE: Please make sure to change your handler code to work with those events
-#    Check the event documentation for details
+  workflow:
+    handler: bin/workflow
+
 # events:
 #    events:
 #      - http:
