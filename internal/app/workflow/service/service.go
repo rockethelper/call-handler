@@ -31,6 +31,8 @@ func (s Service) Run() (model.CallWorkflowResponse, error) {
 	}
 
 	switch action := workflow.Action; action {
+	case "checkIfHelpRequestForUserCanBeCreated":
+		return s.checkIfHelpRequestForUserCanBeCreated()
 	case "createUserHelpRequest":
 		return s.createUserHelpRequest()
 	case "validateUserZipCodeInput":
@@ -38,6 +40,53 @@ func (s Service) Run() (model.CallWorkflowResponse, error) {
 	default:
 		response.ResultState = "fail"
 		return response, errors.New("Unsupported workflow action")
+	}
+}
+
+func (s Service) checkIfHelpRequestForUserCanBeCreated() (model.CallWorkflowResponse, error) {
+	userZipCode := s.Workflow.Input.Details.Parameters.UserZipCode
+	helpRequestType := s.Workflow.Input.Details.Parameters.HelpRequestType
+	response := model.CallWorkflowResponse{}
+
+	if helpRequestType == "question-help" {
+		response.Message = "Request could be created"
+		response.ResultState = "success"
+
+		return response, nil
+	} else {
+		helpRequest := model.NewHelpRequest()
+		helpRequest.RequestType = helpRequestType
+		helpRequest.PhoneNumber = s.Workflow.Input.Details.ContactData.CustomerEndpoint.Address
+		helpRequest.ZipCode = userZipCode
+		err := helpRequest.GenerateID()
+		if err != nil {
+			response.ResultState = "fail"
+			return response, err
+		}
+
+		result, err := s.HelpRequestRepository.Find(helpRequest.ID)
+		// No entry found
+		if err != nil {
+			response.Message = "Request could be created"
+			response.UserZipCode = userZipCode
+			response.UserPhoneNumber = helpRequest.PhoneNumber
+			response.ResultState = "success"
+
+			return response, nil
+		}
+
+		if result.SecondsSinceLastUpdate() > 900 {
+			response.Message = "Request could be created"
+			response.UserZipCode = userZipCode
+			response.UserPhoneNumber = helpRequest.PhoneNumber
+			response.ResultState = "success"
+
+			return response, nil
+		} else {
+			response.ResultState = "fail"
+
+			return response, errors.New("Last HelpRequest for this user and type was created less than 900 seoncds ago.")
+		}
 	}
 }
 

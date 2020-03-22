@@ -9,18 +9,18 @@ import (
 )
 
 type HelpRequest struct {
-	ID          string `json:"id"`
-	RequestType string `json:"request_type"`
-	PhoneNumber string `json:"phone_number"`
-	ZipCode     string `json:"zip_code"`
-	CreatedAt   string `json:"created_at"`
-	UpdatedAt   string `json:"updated_at,omitempty"`
+	ID          string    `json:"id"`
+	RequestType string    `json:"request_type"`
+	PhoneNumber string    `json:"phone_number"`
+	ZipCode     string    `json:"zip_code"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at,omitempty"`
 }
 
 func NewHelpRequest() *HelpRequest {
 	return &HelpRequest{
-		CreatedAt: time.Now().String(),
-		UpdatedAt: time.Now().String(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}
 }
 
@@ -34,4 +34,8 @@ func (h *HelpRequest) GenerateID() error {
 	h.ID = "help-request-" + hex.EncodeToString(hash[:])
 
 	return nil
+}
+
+func (h HelpRequest) SecondsSinceLastUpdate() float64 {
+	return time.Since(h.UpdatedAt).Seconds()
 }
