@@ -1,7 +1,9 @@
 package model
 
 type CallInputParameters struct {
-	UserZipCode string `json:"UserZipCode"`
+	Action          string `json:"Action"`
+	UserPhoneNumber string `json:"UserPhoneNumber"`
+	UserZipCode     string `json:"UserZipCode"`
 }
 
 type CallInputDetails struct {

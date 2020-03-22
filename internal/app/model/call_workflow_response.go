@@ -1,6 +1,7 @@
 package model
 
-type AudioResponse struct {
+type CallWorkflowResponse struct {
 	Message     string `json:"Message"`
 	UserZipCode string `json:"UserZipCode"`
+	ResultState string `json:"ResultState"`
 }
