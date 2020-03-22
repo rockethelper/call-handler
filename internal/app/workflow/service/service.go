@@ -55,12 +55,16 @@ func (s Service) createUserHelpRequest() (model.CallWorkflowResponse, error) {
 	helpRequest.RequestType = helpRequestType
 	helpRequest.PhoneNumber = s.Workflow.Input.Details.ContactData.CustomerEndpoint.Address
 	helpRequest.ZipCode = userZipCode
-	helpRequest.GenerateID(s.Workflow.Input.Details.ContactData.ContactId)
-
-	err := s.HelpRequestRepository.Create(helpRequest)
+	err := helpRequest.GenerateID()
 	if err != nil {
 		response.ResultState = "fail"
-		return response, errors.New("It doesn't work!")
+		return response, err
+	}
+
+	err = s.HelpRequestRepository.Create(helpRequest)
+	if err != nil {
+		response.ResultState = "fail"
+		return response, err
 	}
 
 	response.UserZipCode = userZipCode

@@ -1,6 +1,9 @@
 package model
 
 import (
+	"crypto/md5"
+	"encoding/hex"
+	"errors"
 	"strings"
 	"time"
 )
@@ -21,6 +24,14 @@ func NewHelpRequest() *HelpRequest {
 	}
 }
 
-func (h *HelpRequest) GenerateID(callContactID string) {
-	h.ID = strings.Join([]string{callContactID, h.RequestType, h.PhoneNumber}, "-")
+func (h *HelpRequest) GenerateID() error {
+	if h.RequestType == "" || h.PhoneNumber == "" || h.ZipCode == "" {
+		return errors.New("RequestType, PhoneNumber and ZipCode for HelpRequest need to be present")
+	}
+
+	idStr := strings.Join([]string{h.PhoneNumber, h.ZipCode, h.RequestType}, "-")
+	hash := md5.Sum([]byte(idStr))
+	h.ID = "help-request-" + hex.EncodeToString(hash[:])
+
+	return nil
 }
