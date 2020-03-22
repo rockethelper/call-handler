@@ -17,22 +17,21 @@ import (
 func handler(ctx context.Context, input model.CallInput) (model.CallWorkflowResponse, error) {
 	fmt.Println(input)
 
-	emptyResponse := model.CallWorkflowResponse{}
+	response := model.CallWorkflowResponse{}
 
-	dbSession, err := database.NewSession(ctx, os.Getenv("AWS_REGION"))
+	dbSession, err := database.NewSession(os.Getenv("AWS_REGION"))
 	if err != nil {
-		return emptyResponse, err
+		response.ResultState = "fail"
+		return response, err
 	}
 
 	helpRequestRepository := helpRequestRepo.New(dbSession)
-
 	placeRepository := placeRepo.New()
 	placeService := placeServ.New(placeRepository)
-
 	workflow := model.NewWorkflow()
 	workflow.Input = input
-
 	workflowService := workflowServ.New(workflow, helpRequestRepository, placeService)
+
 	return workflowService.Run()
 }
 

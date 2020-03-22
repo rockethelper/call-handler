@@ -1,39 +1,35 @@
 package repository
 
 import (
-	"os"
-
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+	"github.com/rockethelper/call-handler/internal/app/model"
+	"github.com/rockethelper/call-handler/internal/pkg/database"
 )
 
 type Repository struct {
 	Db *dynamodb.DynamoDB
 }
 
-func New(db *dynamodb.DynamoDB) *Repository {
-	return &Repository{Db: db}
+func New(dbSession *dynamodb.DynamoDB) *Repository {
+	return &Repository{Db: dbSession}
 }
 
-func (r Repository) DynamoDBTableName() *string {
-	return aws.String(os.Getenv("IAM_TABLE_NAME"))
-}
+func (r Repository) Create(helpRequest *model.HelpRequest) error {
+	item, err := dynamodbattribute.MarshalMap(helpRequest)
+	if err != nil {
+		return err
+	}
 
-func (r Repository) Create() error {
-	// 	item, err := dynamodbattribute.MarshalMap(helpRequest)
-	// 	if err != nil {
-	// 		return err
-	// 	}
+	params := &dynamodb.PutItemInput{
+		Item:      item,
+		TableName: database.DynamoDBTableName(),
+	}
 
-	// 	params := &dynamodb.PutItemInput{
-	// 		Item:      item,
-	// 		TableName: r.DynamoDBTableName(),
-	// 	}
-
-	// 	_, err = dbSession.PutItem(params)
-	// 	if err != nil {
-	// 		return err
-	// 	}
+	_, err = r.Db.PutItem(params)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

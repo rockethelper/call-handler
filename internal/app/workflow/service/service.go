@@ -1,17 +1,11 @@
 package service
 
 import (
-	"context"
 	"errors"
-	"os"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
-	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	helpRequestRepo "github.com/rockethelper/call-handler/internal/app/helprequest/repository"
 	"github.com/rockethelper/call-handler/internal/app/model"
 	placeServ "github.com/rockethelper/call-handler/internal/app/place/service"
-	"github.com/rockethelper/call-handler/internal/pkg/database"
 )
 
 type Service struct {
@@ -22,8 +16,9 @@ type Service struct {
 
 func New(workflow *model.Workflow, helpRequestRepository *helpRequestRepo.Repository, placeService *placeServ.Service) *Service {
 	return &Service{
-		PlaceService: placeService,
-		Workflow:     workflow,
+		HelpRequestRepository: helpRequestRepository,
+		PlaceService:          placeService,
+		Workflow:              workflow,
 	}
 }
 
@@ -62,31 +57,11 @@ func (s Service) createUserHelpRequest() (model.CallWorkflowResponse, error) {
 	helpRequest.ZipCode = userZipCode
 	helpRequest.GenerateID(s.Workflow.Input.Details.ContactData.ContactId)
 
-	dbSession, err := database.NewSession(context.TODO(), os.Getenv("AWS_REGION"))
+	err := s.HelpRequestRepository.Create(helpRequest)
 	if err != nil {
-		return response, err
+		response.ResultState = "fail"
+		return response, errors.New("It doesn't work!")
 	}
-
-	item, err := dynamodbattribute.MarshalMap(helpRequest)
-	if err != nil {
-		return response, err
-	}
-
-	params := &dynamodb.PutItemInput{
-		Item:      item,
-		TableName: aws.String(os.Getenv("IAM_TABLE_NAME")),
-	}
-
-	_, err = dbSession.PutItem(params)
-	if err != nil {
-		return response, err
-	}
-	// err := s.HelpRequestRepository.Create()
-	// fmt.Println(err)
-	// if err != nil {
-	// 	response.ResultState = "fail"
-	// 	return response, errors.New("It doesn't work!")
-	// }
 
 	response.UserZipCode = userZipCode
 	response.UserPhoneNumber = helpRequest.PhoneNumber
