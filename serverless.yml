@@ -21,33 +21,40 @@ service: call-handler
 # frameworkVersion: "=X.X.X"
 frameworkVersion: '>=1.28.0 <2.0.0'
 
+custom:
+  iamTableName: ${self:service}-${self:provider.stage}-iam
+  iamTableArn:
+    Fn::Join:
+    - ":"
+    - - arn
+      - aws
+      - dynamodb
+      - Ref: AWS::Region
+      - Ref: AWS::AccountId
+      - table/${self:custom.iamTableName}
+
 provider:
   name: aws
   runtime: go1.x
   stage: beta
   region: eu-central-1
-  # environment:
-  #   IAM_TABLE_NAME: ${self:custom.iamTableName}
-
-# you can add statements to the Lambda function's IAM Role here
-#  iamRoleStatements:
-#    - Effect: "Allow"
-#      Action:
-#        - "s3:ListBucket"
-#      Resource: { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ServerlessDeploymentBucket" } ] ]  }
-#    - Effect: "Allow"
-#      Action:
-#        - "s3:PutObject"
-#      Resource:
-#        Fn::Join:
-#          - ""
-#          - - "arn:aws:s3:::"
-#            - "Ref" : "ServerlessDeploymentBucket"
-#            - "/*"
-
-# you can define service wide environment variables here
-#  environment:
-#    variable1: value1
+  environment:
+    IAM_TABLE_NAME: ${self:custom.iamTableName}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Scan
+        - dynamodb:Query
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource:
+        - ${self:custom.iamTableArn}
+        - Fn::Join:
+          - /
+          - - ${self:custom.iamTableArn}
+            - index/*
 
 package:
   exclude:
@@ -58,6 +65,22 @@ package:
 functions:
   workflow:
     handler: bin/workflow
+
+resources:
+  Resources:
+    iamTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom.iamTableName}
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
 
 # events:
 #    events:
